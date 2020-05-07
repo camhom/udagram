@@ -1,6 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import {filterImageFromURL, deleteLocalFiles, is_url as isUrl} from './util/util';
+import {filterImageFromURL, deleteLocalFiles, isUrl} from './util/util';
 
 (async () => {
 
@@ -29,7 +29,7 @@ import {filterImageFromURL, deleteLocalFiles, is_url as isUrl} from './util/util
   /**************************************************************************** */
 
   //! END @TODO1
-  app.get("/filteredimage", (req , res) => {
+  app.get("/filteredimage", async (req , res) => {
     const { image_url } = req.query;
     
     // Check if URL is valid
@@ -37,19 +37,10 @@ import {filterImageFromURL, deleteLocalFiles, is_url as isUrl} from './util/util
       res.status(400).send("improper URL provided");
     }
 
-    // Listen to finish event to delete local files
-    let localFiles: string[] = []
-    res.on('finish', function() { deleteLocalFiles(localFiles) })
-
     // Process image
-    filterImageFromURL(image_url)
-    .then(
-      path => {
-        localFiles = [...localFiles, path];
-        res.sendFile(path);
-      }
-    ).catch(e => console.log(`Oops, something went wrong when trying to filter the image: ${e}`))
-
+    const path = await filterImageFromURL(image_url)
+    res.on('finish', function() { deleteLocalFiles([path]) })
+    res.sendFile(path);
   });
 
   // Root Endpoint
