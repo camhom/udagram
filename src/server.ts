@@ -1,6 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import {filterImageFromURL, deleteLocalFiles, is_url} from './util/util';
+import {filterImageFromURL, deleteLocalFiles, is_url as isUrl} from './util/util';
 
 (async () => {
 
@@ -33,7 +33,7 @@ import {filterImageFromURL, deleteLocalFiles, is_url} from './util/util';
     const { image_url } = req.query;
     
     // Check if URL is valid
-    if (!is_url(image_url)) {
+    if (!isUrl(image_url)) {
       res.status(400).send("improper URL provided");
     }
 
@@ -45,7 +45,7 @@ import {filterImageFromURL, deleteLocalFiles, is_url} from './util/util';
     filterImageFromURL(image_url)
     .then(
       path => {
-        localFiles.push(path);
+        localFiles = [...localFiles, path];
         res.sendFile(path);
       }
     ).catch(e => console.log(`Oops, something went wrong when trying to filter the image: ${e}`))
