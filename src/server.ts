@@ -29,18 +29,33 @@ import {filterImageFromURL, deleteLocalFiles, isUrl} from './util/util';
   /**************************************************************************** */
 
   //! END @TODO1
-  app.get("/filteredimage", async (req , res) => {
+  app.get("/filteredimage", async (req , res, next) => {
     const { image_url } = req.query;
-    
+    const fetch = require('node-fetch')
+
     // Check if URL is valid
+    if (!image_url) {
+      return res.status(400).send("query parameter 'image_url' missing")
+    }
+
     if (!isUrl(image_url)) {
-      res.status(400).send("improper URL provided");
+      return res.status(400).send("malformed query parameter 'image_url' provided");
+    }
+
+    // Check if image exists
+    const imageResp = await fetch(image_url, {method: 'HEAD'})
+    if (!imageResp.ok) {
+      return res.status(424).send('Image does not exist');
     }
 
     // Process image
-    const path = await filterImageFromURL(image_url)
-    res.on('finish', function() { deleteLocalFiles([path]) })
-    res.sendFile(path);
+    try {
+      const path = await filterImageFromURL(image_url)
+      res.sendFile(path, () => deleteLocalFiles([path]));
+    } catch(e) {
+      console.log(e);
+      return next(e);
+    }
   });
 
   // Root Endpoint
