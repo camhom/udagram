@@ -27,8 +27,6 @@ import {filterImageFromURL, deleteLocalFiles, isUrl} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
-
-  //! END @TODO1
   app.get("/filteredimage", async (req , res, next) => {
     const { image_url } = req.query;
     const fetch = require('node-fetch')
@@ -45,7 +43,7 @@ import {filterImageFromURL, deleteLocalFiles, isUrl} from './util/util';
     // Check if image exists
     const imageResp = await fetch(image_url, {method: 'HEAD'})
     if (!imageResp.ok) {
-      return res.status(424).send('Image does not exist');
+      return res.status(422).send('Image does not exist');
     }
 
     // Process image
@@ -57,6 +55,7 @@ import {filterImageFromURL, deleteLocalFiles, isUrl} from './util/util';
       return next(e);
     }
   });
+  //! END @TODO1
 
   // Root Endpoint
   // Displays a simple message to the user
