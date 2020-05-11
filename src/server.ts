@@ -1,6 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import {filterImageFromURL, deleteLocalFiles, is_url} from './util/util';
+import {filterImageFromURL, deleteLocalFiles, isUrl} from './util/util';
 
 (async () => {
 
@@ -27,30 +27,35 @@ import {filterImageFromURL, deleteLocalFiles, is_url} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
-
-  //! END @TODO1
-  app.get("/filteredimage", (req , res) => {
+  app.get("/filteredimage", async (req , res, next) => {
     const { image_url } = req.query;
-    
+    const fetch = require('node-fetch')
+
     // Check if URL is valid
-    if (!is_url(image_url)) {
-      res.status(400).send("improper URL provided");
+    if (!image_url) {
+      return res.status(400).send("query parameter 'image_url' missing")
     }
 
-    // Listen to finish event to delete local files
-    let localFiles: string[] = []
-    res.on('finish', function() { deleteLocalFiles(localFiles) })
+    if (!isUrl(image_url)) {
+      return res.status(400).send("malformed query parameter 'image_url' provided");
+    }
+
+    // Check if image exists
+    const imageResp = await fetch(image_url, {method: 'HEAD'})
+    if (!imageResp.ok) {
+      return res.status(422).send('Image does not exist');
+    }
 
     // Process image
-    filterImageFromURL(image_url)
-    .then(
-      path => {
-        localFiles.push(path);
-        res.sendFile(path);
-      }
-    ).catch(e => console.log(`Oops, something went wrong when trying to filter the image: ${e}`))
-
+    try {
+      const path = await filterImageFromURL(image_url)
+      res.sendFile(path, () => deleteLocalFiles([path]));
+    } catch(e) {
+      console.error(e);
+      return next(e);
+    }
   });
+  //! END @TODO1
 
   // Root Endpoint
   // Displays a simple message to the user
